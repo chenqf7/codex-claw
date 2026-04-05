@@ -93,10 +93,10 @@ class MemoryRetriever:
         best_score = scored[0][0]
         return [item for item in scored if item[0] == best_score]
 
-    def retrieve(self, query_text: str) -> RetrievalResult:
+    def retrieve(self, query_text: str, persist: bool = False) -> RetrievalResult:
         state = self.classify(query_text)
         pending_items = self.repository.list_pending(status="active")
-        memories = self.repository.list_memories(limit=5)
+        memories = self.repository.list_memories(limit=5, status="committed")
         pending_matches = self._score_records(pending_items, query_text)
         memory_matches = self._score_records(memories, query_text)
 
@@ -122,9 +122,24 @@ class MemoryRetriever:
                 summary_parts = memory_summary_parts or pending_summary_parts
         else:
             summary_parts = memory_summary_parts or pending_summary_parts
-        return RetrievalResult(
+        result = RetrievalResult(
             state=state,
             summary=" | ".join(summary_parts),
             memory_ids=[record.id for record in scoped_memories],
             pending_items=scoped_pending_items,
         )
+        if persist:
+            self.repository.record_retrieval(
+                state=state,
+                query_text=query_text,
+                selected_ids=[
+                    *result.memory_ids,
+                    *(item["id"] for item in result.pending_items),
+                ],
+                memory_ids=result.memory_ids,
+                pending_item_ids=[item["id"] for item in result.pending_items],
+            )
+        return result
+
+    def mark_memory_used(self, memory_id: str) -> None:
+        self.repository.mark_memory_used(memory_id)
