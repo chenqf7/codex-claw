@@ -28,7 +28,7 @@ Planned files and responsibilities:
   Preserve the summary/archive design doc on `main`.
 - Modify: `docs/superpowers/specs/2026-04-06-memory-system-backlog.md`
   Keep the handoff backlog document on `main` and update if needed after merge.
-- Modify: `/Users/chenchen/.codex/skills/memory-system-operator/SKILL.md`
+- Modify: `skills/memory-system-operator/SKILL.md`
   Align the operator workflow with the merged V2 lifecycle and summary/archive behavior.
 - Merge into current workspace: `memory-system-v2`
   Bring committed V2 code from the worktree branch into `main` without pushing.
@@ -89,13 +89,13 @@ Expected: all tests pass on the merged codebase, including the V2 suites.
 - Modify: `docs/superpowers/specs/2026-04-05-memory-system-v2-design.md`
 - Modify: `docs/superpowers/specs/2026-04-05-memory-system-summary-archive-design.md`
 - Modify: `docs/superpowers/specs/2026-04-06-memory-system-backlog.md`
-- Modify: `/Users/chenchen/.codex/skills/memory-system-operator/SKILL.md`
+- Modify: `skills/memory-system-operator/SKILL.md`
 
 - [ ] **Step 1: Compare the merged repository state with the docs backlog and the current operator skill**
 
 ```bash
 sed -n '1,260p' docs/superpowers/specs/2026-04-06-memory-system-backlog.md
-sed -n '1,260p' /Users/chenchen/.codex/skills/memory-system-operator/SKILL.md
+sed -n '1,260p' skills/memory-system-operator/SKILL.md
 ```
 
 - [ ] **Step 2: Update the backlog wording so it reflects that V2 is now on `main` and the next focus is adaptive weighting**

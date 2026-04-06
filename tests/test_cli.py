@@ -1,4 +1,6 @@
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -80,3 +82,50 @@ def test_cli_rejects_nan_scores(tmp_path: Path):
                 "0.9",
             ]
         )
+
+
+def test_module_invocation_executes_cli_commands(tmp_path: Path):
+    db_path = tmp_path / "memory" / "memory.db"
+    handoff_path = tmp_path / "memory" / "current-brief.md"
+
+    base_args = [sys.executable, "-m", "memory_system.cli"]
+    env = {"PYTHONPATH": "src"}
+
+    subprocess.run(
+        [*base_args, "init", "--db", str(db_path)],
+        check=True,
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+    )
+    subprocess.run(
+        [
+            *base_args,
+            "remember",
+            "--db",
+            str(db_path),
+            "--text",
+            "Module invocation should persist memory.",
+            "--type",
+            "fact",
+            "--topic",
+            "workflow",
+            "--durability",
+            "0.9",
+            "--cost",
+            "0.9",
+            "--unfinished",
+        ],
+        check=True,
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+    )
+    subprocess.run(
+        [*base_args, "handoff", "--db", str(db_path), "--output", str(handoff_path)],
+        check=True,
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+    )
+
+    assert db_path.exists()
+    assert handoff_path.exists()
+    assert "Module invocation should persist memory." in handoff_path.read_text()

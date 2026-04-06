@@ -36,7 +36,7 @@ Planned files and responsibilities:
   Cover section generation and ordering behavior.
 - Modify: `tests/test_maintenance.py`
   Cover conservative pending expiration.
-- Modify: `/Users/chenchen/.codex/skills/memory-system-operator/SKILL.md`
+- Modify: `skills/memory-system-operator/SKILL.md`
   Document the V2 startup, during-work, and session-end workflow for new agents.
 
 ### Task 1: Extend Schema For V2 Lifecycle And Telemetry
@@ -550,7 +550,7 @@ git commit -m "feat: add conservative pending expiration"
 ### Task 6: Refresh Agent-Facing Skill Workflow
 
 **Files:**
-- Modify: `/Users/chenchen/.codex/skills/memory-system-operator/SKILL.md`
+- Modify: `skills/memory-system-operator/SKILL.md`
 
 - [ ] **Step 1: Write the workflow update**
 
@@ -580,13 +580,13 @@ git commit -m "feat: add conservative pending expiration"
 
 - [ ] **Step 2: Review the skill text against the V2 spec**
 
-Run: `sed -n '1,260p' /Users/chenchen/.codex/skills/memory-system-operator/SKILL.md`
+Run: `sed -n '1,260p' skills/memory-system-operator/SKILL.md`
 Expected: The skill clearly presents one startup flow, one during-work flow, and one session-end flow for a new agent.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add /Users/chenchen/.codex/skills/memory-system-operator/SKILL.md
+git add skills/memory-system-operator/SKILL.md
 git commit -m "docs: refresh memory skill workflow for v2"
 ```
 

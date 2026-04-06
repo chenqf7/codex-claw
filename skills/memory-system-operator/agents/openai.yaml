@@ -1,0 +1,4 @@
+interface:
+  display_name: "Memory System"
+  short_description: "Use the local AI memory store"
+  default_prompt: "Use $memory-system-operator to store, recover, retrieve, or hand off context with the local SQLite memory system."
