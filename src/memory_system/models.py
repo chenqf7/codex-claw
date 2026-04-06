@@ -18,3 +18,7 @@ class MemoryRecord:
     supersedes: str | None
     created_at: str
     updated_at: str
+    retrieval_count: int = 0
+    last_retrieved_at: str | None = None
+    use_count: int = 0
+    last_used_at: str | None = None

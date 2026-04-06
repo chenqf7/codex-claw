@@ -74,29 +74,39 @@ class MemoryRetriever:
             topic_key = record.topic_key
         return f"{topic_key} {payload_text}".lower()
 
+    @staticmethod
+    def _telemetry_bonus(record: Any) -> float:
+        if isinstance(record, dict):
+            retrieval_count = int(record.get("retrieval_count", 0))
+            use_count = int(record.get("use_count", 0))
+        else:
+            retrieval_count = int(getattr(record, "retrieval_count", 0))
+            use_count = int(getattr(record, "use_count", 0))
+        return min(0.75, retrieval_count * 0.05 + use_count * 0.15)
+
     def _score_records(self, records: list[Any], query_text: str) -> list[tuple[int, Any]]:
         tokens = self._query_tokens(query_text)
         if not tokens:
             return []
 
-        scored: list[tuple[int, Any]] = []
+        scored: list[tuple[int, float, Any]] = []
         for record in records:
             haystack = self._record_search_text(record)
             score = sum(token in haystack for token in tokens)
             if score:
-                scored.append((score, record))
+                scored.append((score, self._telemetry_bonus(record), record))
 
         if not scored:
             return []
 
-        scored.sort(key=lambda item: item[0], reverse=True)
+        scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
         best_score = scored[0][0]
-        return [item for item in scored if item[0] == best_score]
+        return [(score, record) for score, _, record in scored if score == best_score]
 
-    def retrieve(self, query_text: str) -> RetrievalResult:
+    def retrieve(self, query_text: str, persist: bool = False) -> RetrievalResult:
         state = self.classify(query_text)
         pending_items = self.repository.list_pending(status="active")
-        memories = self.repository.list_memories(limit=5)
+        memories = self.repository.list_memories(limit=5, status="committed")
         pending_matches = self._score_records(pending_items, query_text)
         memory_matches = self._score_records(memories, query_text)
 
@@ -122,9 +132,24 @@ class MemoryRetriever:
                 summary_parts = memory_summary_parts or pending_summary_parts
         else:
             summary_parts = memory_summary_parts or pending_summary_parts
-        return RetrievalResult(
+        result = RetrievalResult(
             state=state,
             summary=" | ".join(summary_parts),
             memory_ids=[record.id for record in scoped_memories],
             pending_items=scoped_pending_items,
         )
+        if persist:
+            self.repository.record_retrieval(
+                state=state,
+                query_text=query_text,
+                selected_ids=[
+                    *result.memory_ids,
+                    *(item["id"] for item in result.pending_items),
+                ],
+                memory_ids=result.memory_ids,
+                pending_item_ids=[item["id"] for item in result.pending_items],
+            )
+        return result
+
+    def mark_memory_used(self, memory_id: str) -> None:
+        self.repository.mark_memory_used(memory_id)
