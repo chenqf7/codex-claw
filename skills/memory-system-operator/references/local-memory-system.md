@@ -60,8 +60,10 @@ PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli re
   --text "Need to resume unfinished work." \
   --type task \
   --topic workflow \
+  --kind handoff_note \
   --durability 0.9 \
   --cost 0.9 \
+  --confidence 0.8 \
   --unfinished
 ```
 
@@ -74,6 +76,8 @@ PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli ha
 
 ## Notes
 
+- `remember` requires `--kind` and `--confidence`.
+- `project_memory` entries also require `--project-name`.
 - Scores must be finite numbers between `0` and `1`.
 - `unfinished` must be a real boolean in the Python API.
 - Retrieval is intentionally lightweight and token-based; it is good for V1 continuity, not semantic search.

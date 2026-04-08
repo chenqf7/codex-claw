@@ -85,8 +85,10 @@ PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli re
   --text "User prefers long-term memory first." \
   --type fact \
   --topic user-preferences \
+  --kind user_preference \
   --durability 0.95 \
-  --cost 0.90
+  --cost 0.90 \
+  --confidence 0.95
 ```
 
 For unfinished work that should also appear in pending memory:
@@ -98,12 +100,16 @@ PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli re
   --text "Need to finish adaptive weighting rollout." \
   --type task \
   --topic retrieval-ranking \
+  --kind handoff_note \
   --durability 0.40 \
   --cost 0.95 \
+  --confidence 0.85 \
   --unfinished
 ```
 
-Keep scores between `0` and `1`. Invalid scores and invalid `unfinished` values are rejected.
+Project-scoped durable memories also require `--project-name`.
+
+Keep scores between `0` and `1`. Invalid scores, invalid kinds, and missing `--project-name` for `project_memory` are rejected.
 
 When a retrieved memory proves useful, explicitly mark it as used:
 
