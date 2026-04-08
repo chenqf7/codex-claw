@@ -11,6 +11,8 @@ SCHEMA_STATEMENTS = [
         id TEXT PRIMARY KEY,
         type TEXT NOT NULL,
         payload TEXT NOT NULL,
+        memory_kind TEXT NOT NULL DEFAULT 'handoff_note',
+        project_name TEXT,
         importance REAL NOT NULL CHECK (importance >= 0 AND importance <= 1),
         confidence REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
         freshness REAL NOT NULL CHECK (freshness >= 0 AND freshness <= 1),
@@ -62,6 +64,8 @@ SCHEMA_STATEMENTS = [
 
 MIGRATABLE_COLUMNS = {
     "memories": [
+        ("memory_kind", "TEXT NOT NULL DEFAULT 'handoff_note'"),
+        ("project_name", "TEXT"),
         ("retrieval_count", "INTEGER NOT NULL DEFAULT 0"),
         ("last_retrieved_at", "TEXT"),
         ("use_count", "INTEGER NOT NULL DEFAULT 0"),

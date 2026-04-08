@@ -20,11 +20,20 @@ REQUIRED_OBSERVATION_KEYS = {
     "topic_key",
     "durability",
     "cost_of_forgetting",
+    "memory_kind",
+    "confidence",
+}
+
+ALLOWED_MEMORY_KINDS = {
+    "user_preference",
+    "project_memory",
+    "handoff_note",
+    "learned_practice",
 }
 
 
 def _require_score(name: str, value: object) -> float:
-    if not isinstance(value, (int, float)):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be a number between 0 and 1")
     score = float(value)
     if not math.isfinite(score) or score < 0 or score > 1:
@@ -53,6 +62,24 @@ def validate_observation(observation: dict) -> dict:
         "cost_of_forgetting",
         observation["cost_of_forgetting"],
     )
+    validated["confidence"] = _require_score("confidence", observation["confidence"])
+    memory_kind = observation["memory_kind"]
+    if not isinstance(memory_kind, str) or memory_kind not in ALLOWED_MEMORY_KINDS:
+        allowed = ", ".join(sorted(ALLOWED_MEMORY_KINDS))
+        raise ValueError(f"memory_kind must be one of: {allowed}")
+    validated["memory_kind"] = memory_kind
+
+    project_name = observation.get("project_name")
+    if memory_kind == "project_memory":
+        if not isinstance(project_name, str) or not project_name.strip():
+            raise ValueError("project_name is required for project_memory")
+        validated["project_name"] = project_name
+    else:
+        if project_name is not None:
+            if not isinstance(project_name, str) or not project_name.strip():
+                raise ValueError("project_name must be a non-empty string when provided")
+        validated["project_name"] = project_name
+
     unfinished = observation.get("unfinished", False)
     if not isinstance(unfinished, bool):
         raise ValueError("unfinished must be a boolean value")
@@ -73,11 +100,13 @@ class MemoryWriter:
                 type=observation["type"],
                 payload={"text": observation["text"]},
                 importance=observation["cost_of_forgetting"],
-                confidence=0.8,
+                confidence=observation["confidence"],
                 freshness=1.0,
                 status="committed",
                 source=observation["source"],
                 topic_key=observation["topic_key"],
+                memory_kind=observation["memory_kind"],
+                project_name=observation["project_name"],
                 supersedes=None,
                 created_at=now,
                 updated_at=now,

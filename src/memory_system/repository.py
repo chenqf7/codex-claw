@@ -53,6 +53,8 @@ class MemoryRepository:
             last_retrieved_at=row["last_retrieved_at"],
             use_count=row["use_count"],
             last_used_at=row["last_used_at"],
+            memory_kind=row["memory_kind"],
+            project_name=row["project_name"],
         )
 
     def upsert_memory(self, record: MemoryRecord) -> None:
@@ -60,12 +62,15 @@ class MemoryRepository:
             conn.execute(
                 """
                 INSERT INTO memories (
-                    id, type, payload, importance, confidence, freshness,
+                    id, type, payload, memory_kind, project_name,
+                    importance, confidence, freshness,
                     status, source, topic_key, supersedes, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     type = excluded.type,
                     payload = excluded.payload,
+                    memory_kind = excluded.memory_kind,
+                    project_name = excluded.project_name,
                     importance = excluded.importance,
                     confidence = excluded.confidence,
                     freshness = excluded.freshness,
@@ -79,6 +84,8 @@ class MemoryRepository:
                     record.id,
                     record.type,
                     json.dumps(record.payload, sort_keys=True),
+                    record.memory_kind,
+                    record.project_name,
                     record.importance,
                     record.confidence,
                     record.freshness,
@@ -136,9 +143,10 @@ class MemoryRepository:
             conn.execute(
                 """
                 INSERT INTO memories (
-                    id, type, payload, importance, confidence, freshness,
+                    id, type, payload, memory_kind, project_name,
+                    importance, confidence, freshness,
                     status, source, topic_key, supersedes, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     summary_id,
@@ -151,6 +159,8 @@ class MemoryRepository:
                         },
                         sort_keys=True,
                     ),
+                    "handoff_note",
+                    None,
                     1.0,
                     1.0,
                     1.0,

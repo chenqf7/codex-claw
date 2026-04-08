@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 
 from memory_system.handoff import render_handoff
+from memory_system.write_pipeline import ALLOWED_MEMORY_KINDS
 from memory_system.schema import bootstrap_database
 from memory_system.write_pipeline import MemoryWriter
 
@@ -30,6 +31,14 @@ def build_parser() -> argparse.ArgumentParser:
     remember_parser.add_argument("--topic", required=True)
     remember_parser.add_argument("--durability", required=True, type=bounded_float)
     remember_parser.add_argument("--cost", required=True, type=bounded_float)
+    remember_parser.add_argument(
+        "--kind",
+        required=True,
+        dest="memory_kind",
+        choices=sorted(ALLOWED_MEMORY_KINDS),
+    )
+    remember_parser.add_argument("--confidence", required=True, type=bounded_float)
+    remember_parser.add_argument("--project-name")
     remember_parser.add_argument("--unfinished", action="store_true")
 
     handoff_parser = subparsers.add_parser("handoff")
@@ -48,6 +57,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "remember":
+        if args.memory_kind == "project_memory" and not args.project_name:
+            parser.error("--project-name is required when --kind is project_memory")
         writer = MemoryWriter(Path(args.db))
         writer.observe(
             {
@@ -57,6 +68,9 @@ def main(argv: list[str] | None = None) -> int:
                 "topic_key": args.topic,
                 "durability": args.durability,
                 "cost_of_forgetting": args.cost,
+                "memory_kind": args.memory_kind,
+                "confidence": args.confidence,
+                "project_name": args.project_name,
                 "unfinished": args.unfinished,
             }
         )

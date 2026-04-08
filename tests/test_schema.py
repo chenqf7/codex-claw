@@ -61,6 +61,8 @@ def test_bootstrap_database_creates_v2_columns(tmp_path: Path):
         }
 
     assert {
+        "memory_kind",
+        "project_name",
         "retrieval_count",
         "last_retrieved_at",
         "use_count",
@@ -75,6 +77,76 @@ def test_bootstrap_database_creates_v2_columns(tmp_path: Path):
         "use_count",
         "last_used_at",
     }.issubset(pending_columns)
+
+
+def test_bootstrap_database_backfills_v1_memory_kind_and_project_name(
+    tmp_path: Path,
+):
+    db_path = tmp_path / "memory.db"
+
+    import sqlite3
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE memories (
+                id TEXT PRIMARY KEY,
+                type TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                importance REAL NOT NULL CHECK (importance >= 0 AND importance <= 1),
+                confidence REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+                freshness REAL NOT NULL CHECK (freshness >= 0 AND freshness <= 1),
+                status TEXT NOT NULL,
+                source TEXT NOT NULL,
+                topic_key TEXT NOT NULL,
+                supersedes TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO memories (
+                id,
+                type,
+                payload,
+                importance,
+                confidence,
+                freshness,
+                status,
+                source,
+                topic_key,
+                supersedes,
+                created_at,
+                updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "memory-1",
+                "handoff",
+                "payload",
+                0.8,
+                0.9,
+                0.7,
+                "active",
+                "source",
+                "topic",
+                None,
+                "2026-04-08T00:00:00Z",
+                "2026-04-08T00:00:00Z",
+            ),
+        )
+        conn.commit()
+
+    bootstrap_database(db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT memory_kind, project_name FROM memories ORDER BY id"
+        ).fetchall()
+
+    assert rows == [("handoff_note", None)]
 
 
 def test_bootstrap_database_migrates_v1_tables(tmp_path: Path):

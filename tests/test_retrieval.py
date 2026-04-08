@@ -21,6 +21,8 @@ def test_retrieval_falls_back_to_committed_memory_for_fresh_queries(tmp_path: Pa
             "topic_key": "fresh-task",
             "durability": 0.9,
             "cost_of_forgetting": 0.95,
+            "memory_kind": "handoff_note",
+            "confidence": 0.9,
             "unfinished": False,
         }
     )
@@ -32,6 +34,8 @@ def test_retrieval_falls_back_to_committed_memory_for_fresh_queries(tmp_path: Pa
             "topic_key": "fresh-task",
             "durability": 0.2,
             "cost_of_forgetting": 0.2,
+            "memory_kind": "handoff_note",
+            "confidence": 0.2,
             "unfinished": True,
         }
     )
@@ -61,6 +65,8 @@ def test_retrieval_prioritizes_pending_work_for_continuation_queries(tmp_path: P
             "topic_key": "recovery",
             "durability": 0.9,
             "cost_of_forgetting": 0.95,
+            "memory_kind": "handoff_note",
+            "confidence": 0.9,
             "unfinished": False,
         }
     )
@@ -72,6 +78,8 @@ def test_retrieval_prioritizes_pending_work_for_continuation_queries(tmp_path: P
             "topic_key": "recovery",
             "durability": 0.2,
             "cost_of_forgetting": 0.8,
+            "memory_kind": "handoff_note",
+            "confidence": 0.2,
             "unfinished": True,
         }
     )
@@ -100,6 +108,9 @@ def test_retrieval_filters_results_to_matching_topic(tmp_path: Path):
             "topic_key": "alpha-deploy",
             "durability": 0.95,
             "cost_of_forgetting": 0.95,
+            "memory_kind": "project_memory",
+            "project_name": "alpha",
+            "confidence": 0.95,
             "unfinished": False,
         }
     )
@@ -111,6 +122,9 @@ def test_retrieval_filters_results_to_matching_topic(tmp_path: Path):
             "topic_key": "beta-analytics",
             "durability": 0.95,
             "cost_of_forgetting": 0.95,
+            "memory_kind": "project_memory",
+            "project_name": "beta",
+            "confidence": 0.95,
             "unfinished": False,
         }
     )
@@ -122,6 +136,9 @@ def test_retrieval_filters_results_to_matching_topic(tmp_path: Path):
             "topic_key": "alpha-deploy",
             "durability": 0.2,
             "cost_of_forgetting": 0.9,
+            "memory_kind": "project_memory",
+            "project_name": "alpha",
+            "confidence": 0.2,
             "unfinished": True,
         }
     )
@@ -133,6 +150,9 @@ def test_retrieval_filters_results_to_matching_topic(tmp_path: Path):
             "topic_key": "beta-analytics",
             "durability": 0.2,
             "cost_of_forgetting": 0.9,
+            "memory_kind": "project_memory",
+            "project_name": "beta",
+            "confidence": 0.2,
             "unfinished": True,
         }
     )
@@ -160,6 +180,9 @@ def test_retrieval_does_not_leak_unmatched_pending_items(tmp_path: Path):
             "topic_key": "alpha-deploy",
             "durability": 0.95,
             "cost_of_forgetting": 0.95,
+            "memory_kind": "project_memory",
+            "project_name": "alpha",
+            "confidence": 0.95,
             "unfinished": False,
         }
     )
@@ -171,6 +194,9 @@ def test_retrieval_does_not_leak_unmatched_pending_items(tmp_path: Path):
             "topic_key": "beta-analytics",
             "durability": 0.2,
             "cost_of_forgetting": 0.9,
+            "memory_kind": "project_memory",
+            "project_name": "beta",
+            "confidence": 0.2,
             "unfinished": True,
         }
     )
@@ -255,6 +281,8 @@ def test_retrieve_logs_selected_items_and_updates_counts(tmp_path: Path):
             "topic_key": "handoff",
             "durability": 0.9,
             "cost_of_forgetting": 0.9,
+            "memory_kind": "handoff_note",
+            "confidence": 0.9,
             "unfinished": False,
         }
     )
@@ -266,6 +294,8 @@ def test_retrieve_logs_selected_items_and_updates_counts(tmp_path: Path):
             "topic_key": "handoff",
             "durability": 0.2,
             "cost_of_forgetting": 0.8,
+            "memory_kind": "handoff_note",
+            "confidence": 0.2,
             "unfinished": True,
         }
     )
@@ -310,6 +340,8 @@ def test_mark_memory_used_updates_usage_counters(tmp_path: Path):
             "topic_key": "user",
             "durability": 0.95,
             "cost_of_forgetting": 0.9,
+            "memory_kind": "user_preference",
+            "confidence": 0.95,
             "unfinished": False,
         }
     )

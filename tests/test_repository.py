@@ -38,6 +38,58 @@ def test_repository_can_insert_and_fetch_memory(tmp_path: Path):
     assert fetched.use_count == 0
 
 
+def test_repository_round_trips_memory_kind_and_project_name(tmp_path: Path):
+    db_path = tmp_path / "memory.db"
+    bootstrap_database(db_path)
+    repository = MemoryRepository(db_path)
+
+    initial = MemoryRecord(
+        id="mem-1",
+        type="fact",
+        payload={"text": "User prefers adaptive memory policies."},
+        importance=0.9,
+        confidence=0.8,
+        freshness=1.0,
+        status="committed",
+        source="user",
+        topic_key="memory-policy",
+        memory_kind="handoff_note",
+        project_name="alpha",
+        supersedes=None,
+        created_at="2026-04-05T00:00:00Z",
+        updated_at="2026-04-05T00:00:00Z",
+    )
+    updated = MemoryRecord(
+        id="mem-1",
+        type="fact",
+        payload={"text": "User prefers memory kinds per project."},
+        importance=0.95,
+        confidence=0.85,
+        freshness=0.9,
+        status="committed",
+        source="system",
+        topic_key="memory-policy",
+        memory_kind="summary",
+        project_name="beta",
+        supersedes=None,
+        created_at="2026-04-05T00:00:00Z",
+        updated_at="2026-04-05T01:00:00Z",
+    )
+
+    repository.upsert_memory(initial)
+    repository.upsert_memory(updated)
+
+    fetched = repository.get_memory("mem-1")
+    listed = repository.list_memories(limit=5)
+
+    assert fetched is not None
+    assert fetched.memory_kind == "summary"
+    assert fetched.project_name == "beta"
+    assert fetched.payload == {"text": "User prefers memory kinds per project."}
+    assert listed[0].memory_kind == "summary"
+    assert listed[0].project_name == "beta"
+
+
 def test_repository_migrates_v1_pending_schema_on_open(tmp_path: Path):
     db_path = tmp_path / "memory.db"
 
