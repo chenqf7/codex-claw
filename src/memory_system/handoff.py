@@ -11,8 +11,13 @@ def _format_items(items: Iterable[str]) -> list[str]:
     return [f"- {item}" for item in items] if items else ["_None_"]
 
 
+def _memory_line(record) -> str:
+    text = record.payload["text"]
+    return f"[summary] {text}" if record.type == "summary" else text
+
+
 def _memory_texts(records) -> list[str]:
-    return [record.payload["text"] for record in records]
+    return [_memory_line(record) for record in records]
 
 
 def _durable_context_records(repository: MemoryRepository, *, limit: int) -> list:
@@ -41,7 +46,13 @@ def _recent_change_lines(repository: MemoryRepository, *, limit: int) -> list[st
 
     recent_changes: list[tuple[str, str, str]] = []
     for record in recent_memories:
-        recent_changes.append(("memory", record.updated_at, record.payload["text"]))
+        recent_changes.append(
+            (
+                "memory:summary" if record.type == "summary" else "memory",
+                record.updated_at,
+                record.payload["text"],
+            )
+        )
     for record in recent_pending_items:
         recent_changes.append(("pending", record["updated_at"], record["payload"]["text"]))
 

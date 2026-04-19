@@ -90,6 +90,105 @@ def test_repository_round_trips_memory_kind_and_project_name(tmp_path: Path):
     assert listed[0].project_name == "beta"
 
 
+def test_repository_list_memories_supports_status_type_and_topic_filters(
+    tmp_path: Path,
+):
+    db_path = tmp_path / "memory.db"
+    bootstrap_database(db_path)
+    repository = MemoryRepository(db_path)
+
+    repository.upsert_memory(
+        MemoryRecord(
+            id="mem-1",
+            type="fact",
+            payload={"text": "Alpha committed"},
+            importance=0.9,
+            confidence=0.8,
+            freshness=1.0,
+            status="committed",
+            source="cli",
+            topic_key="alpha",
+            supersedes=None,
+            created_at="2026-04-14T00:00:00Z",
+            updated_at="2026-04-14T00:00:00Z",
+        )
+    )
+    repository.upsert_memory(
+        MemoryRecord(
+            id="mem-2",
+            type="fact",
+            payload={"text": "Alpha archived"},
+            importance=0.5,
+            confidence=0.8,
+            freshness=0.5,
+            status="archived",
+            source="cli",
+            topic_key="alpha",
+            supersedes=None,
+            created_at="2026-04-14T00:00:00Z",
+            updated_at="2026-04-14T00:00:00Z",
+        )
+    )
+    repository.upsert_memory(
+        MemoryRecord(
+            id="mem-3",
+            type="summary",
+            payload={"text": "Beta summary", "source_ids": ["mem-4"]},
+            importance=1.0,
+            confidence=1.0,
+            freshness=1.0,
+            status="committed",
+            source="system",
+            topic_key="beta",
+            supersedes=None,
+            created_at="2026-04-14T00:00:01Z",
+            updated_at="2026-04-14T00:00:01Z",
+        )
+    )
+
+    rows = repository.list_memories(
+        limit=5,
+        status="committed",
+        memory_type="fact",
+        topic_key="alpha",
+    )
+
+    assert [row.id for row in rows] == ["mem-1"]
+
+
+def test_repository_get_linked_summary_target(tmp_path: Path):
+    db_path = tmp_path / "memory.db"
+    bootstrap_database(db_path)
+    repository = MemoryRepository(db_path)
+
+    repository.upsert_memory(
+        MemoryRecord(
+            id="summary-1",
+            type="summary",
+            payload={
+                "text": "Alpha summary",
+                "source_ids": ["mem-1"],
+                "source_type": "fact",
+            },
+            importance=1.0,
+            confidence=1.0,
+            freshness=1.0,
+            status="committed",
+            source="system",
+            topic_key="alpha",
+            supersedes=None,
+            created_at="2026-04-14T00:00:00Z",
+            updated_at="2026-04-14T00:00:00Z",
+        )
+    )
+
+    linked = repository.get_linked_summary("summary-1")
+
+    assert linked is not None
+    assert linked.id == "summary-1"
+    assert linked.payload["source_ids"] == ["mem-1"]
+
+
 def test_repository_migrates_v1_pending_schema_on_open(tmp_path: Path):
     db_path = tmp_path / "memory.db"
 

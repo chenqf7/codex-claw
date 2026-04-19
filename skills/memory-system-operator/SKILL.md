@@ -117,6 +117,38 @@ When a retrieved memory proves useful, explicitly mark it as used:
 retriever.mark_memory_used(result.memory_ids[0])
 ```
 
+For CLI-driven maintenance, the module entrypoint now exposes summary and archive flows directly:
+
+```bash
+cd <repo-root>
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli summarize \
+  --db memory/memory.db \
+  --min-cluster-size 3
+
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli archive \
+  --db memory/memory.db \
+  --stale-before 2026-04-01T00:00:00+00:00
+
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli maintain \
+  --db memory/memory.db \
+  --min-cluster-size 3 \
+  --stale-before 2026-04-01T00:00:00+00:00
+```
+
+For JSON-first lifecycle visibility, inspect durable memory directly from the CLI:
+
+```bash
+cd <repo-root>
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli list \
+  --db memory/memory.db \
+  --status committed \
+  --limit 10
+
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli inspect \
+  --db memory/memory.db \
+  --id summary-123
+```
+
 For maintenance-oriented cleanup or compaction work, use `MemoryMaintenance` directly:
 
 ```python

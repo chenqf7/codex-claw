@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
 from pathlib import Path
 
 from memory_system.handoff import render_handoff
+from memory_system.lifecycle import build_inspect_payload, build_list_payload
+from memory_system.maintenance import MemoryMaintenance
+from memory_system.repository import MemoryRepository
 from memory_system.write_pipeline import ALLOWED_MEMORY_KINDS
 from memory_system.schema import bootstrap_database
 from memory_system.write_pipeline import MemoryWriter
@@ -14,6 +18,13 @@ def bounded_float(value: str) -> float:
     number = float(value)
     if not math.isfinite(number) or number < 0 or number > 1:
         raise argparse.ArgumentTypeError("value must be between 0 and 1")
+    return number
+
+
+def positive_int(value: str) -> int:
+    number = int(value)
+    if number <= 0:
+        raise argparse.ArgumentTypeError("value must be a positive integer")
     return number
 
 
@@ -44,6 +55,38 @@ def build_parser() -> argparse.ArgumentParser:
     handoff_parser = subparsers.add_parser("handoff")
     handoff_parser.add_argument("--db", required=True)
     handoff_parser.add_argument("--output", required=True)
+
+    list_parser = subparsers.add_parser("list")
+    list_parser.add_argument("--db", required=True)
+    list_parser.add_argument("--status")
+    list_parser.add_argument("--type", dest="memory_type")
+    list_parser.add_argument("--topic", dest="topic_key")
+    list_parser.add_argument("--limit", type=positive_int, default=10)
+
+    inspect_parser = subparsers.add_parser("inspect")
+    inspect_parser.add_argument("--db", required=True)
+    inspect_parser.add_argument("--id", required=True)
+
+    summarize_parser = subparsers.add_parser("summarize")
+    summarize_parser.add_argument("--db", required=True)
+    summarize_parser.add_argument(
+        "--min-cluster-size",
+        required=True,
+        type=positive_int,
+    )
+
+    archive_parser = subparsers.add_parser("archive")
+    archive_parser.add_argument("--db", required=True)
+    archive_parser.add_argument("--stale-before", required=True)
+
+    maintain_parser = subparsers.add_parser("maintain")
+    maintain_parser.add_argument("--db", required=True)
+    maintain_parser.add_argument(
+        "--min-cluster-size",
+        required=True,
+        type=positive_int,
+    )
+    maintain_parser.add_argument("--stale-before", required=True)
 
     return parser
 
@@ -78,6 +121,74 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "handoff":
         render_handoff(Path(args.db), Path(args.output))
+        return 0
+
+    if args.command == "list":
+        repository = MemoryRepository(Path(args.db))
+        records = repository.list_memories(
+            limit=args.limit,
+            status=args.status,
+            memory_type=args.memory_type,
+            topic_key=args.topic_key,
+        )
+        payload = [
+            build_list_payload(
+                record,
+                linked_summary=(
+                    repository.get_linked_summary(record.supersedes)
+                    if record.supersedes
+                    else None
+                ),
+            )
+            for record in records
+        ]
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "inspect":
+        repository = MemoryRepository(Path(args.db))
+        record = repository.get_memory(args.id)
+        if record is None:
+            parser.error(f"Memory not found: {args.id}")
+        linked_summary = (
+            repository.get_linked_summary(record.supersedes)
+            if record.supersedes
+            else None
+        )
+        print(
+            json.dumps(
+                build_inspect_payload(record, linked_summary=linked_summary),
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0
+
+    if args.command == "summarize":
+        maintenance = MemoryMaintenance(Path(args.db))
+        summary_ids = maintenance.summarize_eligible_clusters(
+            min_cluster_size=args.min_cluster_size
+        )
+        print(f"summarized={len(summary_ids)}")
+        return 0
+
+    if args.command == "archive":
+        maintenance = MemoryMaintenance(Path(args.db))
+        archived_ids = maintenance.archive_stale_superseded_memories(
+            stale_before=args.stale_before
+        )
+        print(f"archived={len(archived_ids)}")
+        return 0
+
+    if args.command == "maintain":
+        maintenance = MemoryMaintenance(Path(args.db))
+        summary_ids = maintenance.summarize_eligible_clusters(
+            min_cluster_size=args.min_cluster_size
+        )
+        archived_ids = maintenance.archive_stale_superseded_memories(
+            stale_before=args.stale_before
+        )
+        print(f"summarized={len(summary_ids)} archived={len(archived_ids)}")
         return 0
 
     parser.error(f"Unsupported command: {args.command}")

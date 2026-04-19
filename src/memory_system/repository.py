@@ -411,23 +411,55 @@ class MemoryRepository:
         self,
         *,
         limit: int,
-        status: str = "committed",
+        status: str | None = "committed",
+        memory_type: str | None = None,
+        topic_key: str | None = None,
     ) -> list[MemoryRecord]:
+        conditions: list[str] = []
+        params: list[object] = []
+
+        if status is not None:
+            conditions.append("status = ?")
+            params.append(status)
+        if memory_type is not None:
+            conditions.append("type = ?")
+            params.append(memory_type)
+        if topic_key is not None:
+            conditions.append("topic_key = ?")
+            params.append(topic_key)
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
         with connect(self.db_path) as conn:
             rows = conn.execute(
-                """
+                f"""
                 SELECT *
                 FROM memories
-                WHERE status = ?
+                {where_clause}
                 ORDER BY
                     CASE WHEN type = 'summary' THEN 0 ELSE 1 END,
                     importance DESC,
                     updated_at DESC
                 LIMIT ?
                 """,
-                (status, limit),
+                (*params, limit),
             ).fetchall()
         return [self._memory_from_row(row) for row in rows]
+
+    def get_linked_summary(self, summary_id: str) -> MemoryRecord | None:
+        with connect(self.db_path) as conn:
+            row = conn.execute(
+                """
+                SELECT *
+                FROM memories
+                WHERE id = ?
+                  AND type = 'summary'
+                """,
+                (summary_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return self._memory_from_row(row)
 
     def list_summary_candidate_clusters(self, *, min_cluster_size: int) -> list[dict]:
         with connect(self.db_path) as conn:

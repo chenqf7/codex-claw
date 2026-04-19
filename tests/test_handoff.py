@@ -162,6 +162,42 @@ def test_handoff_durable_context_prefers_summary_over_detail_for_same_topic(tmp_
     assert "Archived alpha fact" not in durable_context_section
 
 
+def test_handoff_marks_summary_records_in_durable_context_and_recent_changes(
+    tmp_path: Path,
+):
+    db_path = tmp_path / "memory.db"
+    output_path = tmp_path / "current-brief.md"
+    bootstrap_database(db_path)
+    repository = MemoryRepository(db_path)
+
+    repository.upsert_memory(
+        MemoryRecord(
+            id="summary-1",
+            type="summary",
+            payload={
+                "text": "Alpha summary",
+                "source_ids": ["mem-1"],
+                "source_type": "fact",
+            },
+            importance=1.0,
+            confidence=1.0,
+            freshness=1.0,
+            status="committed",
+            source="system",
+            topic_key="alpha",
+            supersedes=None,
+            created_at="2026-04-14T00:00:00Z",
+            updated_at="2026-04-14T00:00:00Z",
+        )
+    )
+
+    render_handoff(db_path, output_path)
+    content = output_path.read_text()
+
+    assert "- [summary] Alpha summary" in content
+    assert "- [memory:summary] Alpha summary" in content
+
+
 def test_handoff_includes_suspect_staging_in_caution_items(tmp_path: Path):
     db_path = tmp_path / "memory.db"
     output_path = tmp_path / "current-brief.md"

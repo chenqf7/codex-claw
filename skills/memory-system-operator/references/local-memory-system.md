@@ -9,7 +9,7 @@
 ## Core Modules
 
 - `src/memory_system/cli.py`
-  Command-line entrypoints: `init`, `remember`, `handoff`
+  Command-line entrypoints: `init`, `remember`, `handoff`, `list`, `inspect`, `summarize`, `archive`, `maintain`
 - `src/memory_system/write_pipeline.py`
   Validates observations and writes durable memory plus pending items
 - `src/memory_system/retrieval.py`
@@ -74,9 +74,59 @@ cd <repo-root>
 PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli handoff --db memory/memory.db --output memory/current-brief.md
 ```
 
+Summarize eligible committed clusters:
+
+```bash
+cd <repo-root>
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli summarize \
+  --db memory/memory.db \
+  --min-cluster-size 3
+```
+
+Archive stale superseded memories:
+
+```bash
+cd <repo-root>
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli archive \
+  --db memory/memory.db \
+  --stale-before 2026-04-01T00:00:00+00:00
+```
+
+Run summarize and archive together:
+
+```bash
+cd <repo-root>
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli maintain \
+  --db memory/memory.db \
+  --min-cluster-size 3 \
+  --stale-before 2026-04-01T00:00:00+00:00
+```
+
+List durable memory with JSON lifecycle visibility:
+
+```bash
+cd <repo-root>
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli list \
+  --db memory/memory.db \
+  --status committed \
+  --limit 10
+```
+
+Inspect one durable memory as JSON:
+
+```bash
+cd <repo-root>
+PYTHONPATH=src /usr/local/opt/python@3.11/bin/python3.11 -m memory_system.cli inspect \
+  --db memory/memory.db \
+  --id summary-123
+```
+
 ## Notes
 
 - `remember` requires `--kind` and `--confidence`.
+- `list` and `inspect` are JSON-first visibility commands for durable memory.
+- `summarize` and `maintain` require `--min-cluster-size` to be a positive integer.
+- `archive` and `maintain` require an ISO-8601 `--stale-before` cutoff.
 - `project_memory` entries also require `--project-name`.
 - Scores must be finite numbers between `0` and `1`.
 - `unfinished` must be a real boolean in the Python API.
